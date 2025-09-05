@@ -132,6 +132,9 @@ dt_stub_df_init <- function(
       row_group_ids <- row_group_labels
     }
 
+    # Sanitizing the `row_group_ids` values to ensure they are valid HTML IDs
+    row_group_ids <- sanitize_html_id(row_group_ids)
+
     # Place the `row_group_ids` values into `stub_df$group_id`
     stub_df[["group_id"]] <- row_group_ids
 

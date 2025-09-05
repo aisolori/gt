@@ -1662,6 +1662,7 @@ tab_row_group <- function(
     group = NULL
 ) {
 
+
   # Perform input object validation
   stop_if_not_gt_tbl(data = data)
 
@@ -1704,6 +1705,8 @@ tab_row_group <- function(
       return(data)
     }
   }
+
+  id <- sanitize_html_id(id)
 
   # Check `id` against existing `id` values and stop if necessary
   check_row_group_id_unique(data = data, row_group_id = id)
@@ -1774,10 +1777,10 @@ tab_row_group <- function(
 #'
 #'   `vector<character>` // **required**
 #'
-#'   The text to be used as the stubhead label(s). For tables with multi-column 
-#'   stubs, you can provide either a single label that spans all stub columns, or 
-#'   a vector of labels with one label for each stub column. We can optionally use 
-#'   [md()] or [html()] to style the text as Markdown or to retain HTML elements 
+#'   The text to be used as the stubhead label(s). For tables with multi-column
+#'   stubs, you can provide either a single label that spans all stub columns, or
+#'   a vector of labels with one label for each stub column. We can optionally use
+#'   [md()] or [html()] to style the text as Markdown or to retain HTML elements
 #'   in the text.
 #'
 #' @return An object of class `gt_tbl`.

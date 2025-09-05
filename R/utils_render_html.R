@@ -22,6 +22,32 @@
 #------------------------------------------------------------------------------#
 
 
+#' A function to sanitize HTML IDs
+#' @noRd
+
+sanitize_html_id <- function(x) {
+  x <- as.character(x)
+  x[is.na(x)] <- "" # normalizing NA's
+
+  #  strip accents/diacritics first so equality is preserved post-sanitize
+  x <- iconv(x, to = "ASCII//TRANSLIT")
+
+  x <- gsub("\\s+", "_", x, perl = TRUE)  # spaces to underscores
+  x <- tolower(x)                         # normalize case
+  x <- gsub("[^a-z0-9_-]", "", x, perl = TRUE)  # drop anything not safe in ids
+
+  # HTML5 allows more, but keep it conservative; ensure id starts with a letter
+  needs_prefix <- !nzchar(x) | !grepl("^[a-z]", x)
+  x[needs_prefix] <- paste0("g-", x[needs_prefix])
+
+  # Avoid collisions introduced by sanitization
+  if (anyDuplicated(x)) x <- make.unique(x, sep = "-")
+
+  x
+}
+
+
+
 #' Transform a footnote mark to an HTML representation
 #'
 #' @noRd
@@ -395,6 +421,9 @@ create_heading_component_h <- function(data) {
   # Get effective number of columns
   n_cols_total <- get_effective_number_of_columns(data = data)
 
+  # Has a real <caption> been set (via tab_caption)? If so, hide decorative rows from AT
+  caption_is_set <- !is.null(dt_options_get_value(data = data, option = "table_caption"))
+
   # Get the footnote marks for the title
   if ("title" %in% footnotes_tbl$locname) {
 
@@ -476,7 +505,8 @@ create_heading_component_h <- function(data) {
   title_row <-
     htmltools::tags$tr(
       class = "gt_heading",
-      htmltools::tags$td(
+      `aria-hidden` = if (caption_is_set) "true" else NULL,
+      htmltools::tags$th(
         colspan = n_cols_total,
         class = paste(title_classes, collapse = " "),
         style = title_styles,
@@ -491,7 +521,8 @@ create_heading_component_h <- function(data) {
     subtitle_row <-
       htmltools::tags$tr(
         class = "gt_heading",
-        htmltools::tags$td(
+        `aria-hidden` = if (caption_is_set) "true" else NULL,
+        htmltools::tags$th(
           colspan = n_cols_total,
           class = paste(subtitle_classes, collapse = " "),
           style = subtitle_styles,
@@ -1215,7 +1246,7 @@ create_body_component_h <- function(data) {
           class = group_class,
           style = row_style_group_heading_row,
           scope = if (n_cols_total > 1) "colgroup" else "col",
-          id = group_label,
+          id = group_id,
           htmltools::HTML(group_label)
         )
       )
