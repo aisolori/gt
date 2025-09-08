@@ -40,9 +40,6 @@ sanitize_html_id <- function(x) {
   needs_prefix <- !nzchar(x) | !grepl("^[a-z]", x)
   x[needs_prefix] <- paste0("g-", x[needs_prefix])
 
-  # Avoid collisions introduced by sanitization
-  if (anyDuplicated(x)) x <- make.unique(x, sep = "-")
-
   x
 }
 
