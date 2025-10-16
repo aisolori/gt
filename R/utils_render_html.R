@@ -43,6 +43,33 @@ sanitize_html_id <- function(x) {
   x
 }
 
+valid_html_id <- function(x) {
+  # Make sure it starts with a letter.
+  valid_ids <- grepl("^[A-z]", x)
+  x[!valid_ids] <- paste0("a", x[!valid_ids])
+  gsub("\\s+", "-", x)
+}
+
+# Visually-hidden text helper (screen-reader only)
+sr_only <- function(txt) {
+  htmltools::tags$span(
+    txt,
+    class = "gt_sr_only",
+    style = htmltools::css(
+      position = "absolute",
+      width = "1px",
+      height = "1px",
+      padding = "0",
+      margin = "-1px",
+      overflow = "hidden",
+      clip = "rect(0, 0, 0, 0)",
+      `white-space` = "nowrap",
+      border = "0"
+    )
+  )
+}
+
+
 
 
 #' Transform a footnote mark to an HTML representation
@@ -710,13 +737,19 @@ create_columns_component_h <- function(data) {
           NULL
         }
 
+      # Helper to pretty up a fallback from the variable id (e.g., "area_title" -> "Area Title")
+      fallback_from_id <- function(x) {
+        tools::toTitleCase(gsub("[_-]+", " ", x))
+      }
+
+      label_txt <- headings_labels[i]
+      is_blank  <- is.na(label_txt) || trimws(as.character(label_txt)) == ""
+      fallback  <- fallback_from_id(headings_vars[i])
+
       table_col_headings[[length(table_col_headings) + 1]] <-
         htmltools::tags$th(
           class = paste(
-            c(
-              "gt_col_heading", "gt_columns_bottom_border",
-              paste0("gt_", col_alignment[i])
-            ),
+            c("gt_col_heading", "gt_columns_bottom_border", paste0("gt_", col_alignment[i])),
             collapse = " "
           ),
           rowspan = 1,
@@ -724,7 +757,12 @@ create_columns_component_h <- function(data) {
           style = column_style,
           scope = "col",
           id = headings_ids[i],
-          htmltools::HTML(headings_labels[i])
+          # keep aria-label (harmless + helps some AT)
+          `aria-label` = if (is_blank) fallback else NULL,
+          # IMPORTANT: put real text content in the cell (hidden if originally blank)
+          htmltools::tagList(
+            if (is_blank) sr_only(fallback) else htmltools::HTML(label_txt)
+          )
         )
     }
 
@@ -1819,6 +1857,8 @@ render_row_data <- function(
     col_id_i
   )
 
+  header <- valid_html_id(header)
+
   base_attributes <- ifelse(
     has_stub_class,
     paste0("id=\"", row_id_i, "\" ", "scope=\"", scope, "\" "),
@@ -2461,12 +2501,7 @@ as_css_font_family_attr <- function(font_vec, value_only = FALSE) {
   paste_between(value, x_2 = c("font-family: ", ";"))
 }
 
-valid_html_id <- function(x) {
-  # Make sure it starts with a letter.
-  valid_ids <- grepl("^[A-z]", x)
-  x[!valid_ids] <- paste0("a", x[!valid_ids])
-  gsub("\\s+", "-", x)
-}
+
 
 # Function to calculate rowspan values for hierarchical stub columns
 calculate_hierarchical_stub_rowspans <- function(data) {
