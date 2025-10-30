@@ -44,9 +44,8 @@ sanitize_html_id <- function(x) {
 }
 
 valid_html_id <- function(x) {
-  # Make sure it starts with a letter.
-  valid_ids <- grepl("^[A-z]", x)
-  x[!valid_ids] <- paste0("a", x[!valid_ids])
+  #trim white space
+  x <- trimws(as.character(x))
   gsub("\\s+", "-", x)
 }
 
@@ -1851,13 +1850,17 @@ render_row_data <- function(
   scope[!is.na(row_span_vals) & row_span_vals > 1] <- "rowgroup"
 
   has_group <- !is.na(current_group_id)
+
+  row_id_i <- valid_html_id(row_id_i)
+  col_id_i <- valid_html_id(col_id_i)
+
   header <- paste0(
     ifelse(has_group, current_group_id, ""), ifelse(has_group, " ", ""),
     row_id_i, ifelse(has_group | nzchar(row_id_i), " ", ""),
     col_id_i
   )
-
-  header <- valid_html_id(header)
+  # Cleaning up header values to ensure valid HTML IDs
+  #header <- valid_html_id(header)
 
   base_attributes <- ifelse(
     has_stub_class,
